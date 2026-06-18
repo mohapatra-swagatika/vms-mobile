@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import {config} from '../constants/config';
-import {strings} from '../constants';
+import {locale} from '../constants';
 import {colors, spacing} from '../theme';
 import {UserImage} from '../types/user';
 
@@ -85,7 +85,7 @@ export function ImageSlider({
   if (images.length === 0) {
     return (
       <View style={[styles.empty, {width: slideWidth, height: slideHeight}]}>
-        <Text style={styles.emptyText}>{strings.home.noImages}</Text>
+        <Text style={styles.emptyText}>{locale.home.gallery.empty}</Text>
       </View>
     );
   }
@@ -116,7 +116,7 @@ export function ImageSlider({
               source={{uri: item.uri}}
               style={styles.image}
               resizeMode="cover"
-              accessibilityLabel={item.label ?? 'User image'}
+              accessibilityLabel={item.label ?? locale.accessibility.userImage}
             />
             {item.label ? (
               <View style={styles.captionBar}>
@@ -139,7 +139,7 @@ export function ImageSlider({
           ))}
         </View>
         <Text style={styles.counter}>
-          {activeIndex + 1} / {images.length}
+          {locale.home.gallery.imageCounter(activeIndex + 1, images.length)}
         </Text>
       </View>
     </View>

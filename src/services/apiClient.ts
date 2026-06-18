@@ -1,4 +1,9 @@
-import {config} from '../constants/config';
+import {AxiosError, AxiosRequestConfig} from 'axios';
+
+import {clearSession, getAccessToken, refreshAccessToken} from '../auth/authSession';
+import {apiPaths} from '../constants/apiPaths';
+import {locale} from '../constants';
+import {http} from './httpClient';
 
 type ApiErrorBody = {
   error?: string;
@@ -13,32 +18,83 @@ export class ApiError extends Error {
   }
 }
 
+function isAuthPath(url?: string): boolean {
+  return (
+    url?.includes(apiPaths.auth.login) === true ||
+    url?.includes(apiPaths.auth.refresh) === true
+  );
+}
+
+function toApiError(error: AxiosError<ApiErrorBody>): ApiError {
+  const status = error.response?.status ?? 0;
+  const message =
+    error.response?.data?.error ??
+    error.message ??
+    locale.errors.requestFailed(status || locale.errors.network);
+  return new ApiError(message, status);
+}
+
+/** Attach current access token to outgoing requests. */
+http.interceptors.request.use(requestConfig => {
+  if (!requestConfig.headers.Authorization) {
+    const token = getAccessToken();
+    if (token) {
+      requestConfig.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return requestConfig;
+});
+
+/**
+ * On 401: call POST /auth/refresh with stored refresh token,
+ * save the new access token, then retry the original request.
+ */
+http.interceptors.response.use(
+  response => response,
+  async (error: AxiosError<ApiErrorBody>) => {
+    const original = error.config;
+
+    if (
+      !original ||
+      original._retry ||
+      original.skipAuthRefresh ||
+      error.response?.status !== 401 ||
+      isAuthPath(original.url)
+    ) {
+      throw toApiError(error);
+    }
+
+    try {
+      const nextToken = await refreshAccessToken();
+      original._retry = true;
+      original.headers.Authorization = `Bearer ${nextToken}`;
+      return http(original);
+    } catch {
+      await clearSession();
+      throw new ApiError(locale.errors.sessionExpired, 401);
+    }
+  },
+);
+
+export type ApiRequestOptions = AxiosRequestConfig & {
+  accessToken?: string;
+};
+
 export async function apiRequest<T>(
   path: string,
-  options: RequestInit & {accessToken?: string} = {},
+  options: ApiRequestOptions = {},
 ): Promise<T> {
-  const {accessToken, headers, ...rest} = options;
+  const {accessToken, skipAuthRefresh, ...axiosConfig} = options;
 
-  const response = await fetch(`${config.apiBaseUrl}${path}`, {
-    ...rest,
+  const response = await http.request<T>({
+    url: path,
+    ...axiosConfig,
     headers: {
-      Accept: 'application/json',
-      ...(rest.body ? {'Content-Type': 'application/json'} : null),
+      ...axiosConfig.headers,
       ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : null),
-      ...headers,
     },
+    skipAuthRefresh,
   });
 
-  const text = await response.text();
-  const data = text ? (JSON.parse(text) as T | ApiErrorBody) : ({} as T);
-
-  if (!response.ok) {
-    const message =
-      typeof data === 'object' && data && 'error' in data && data.error
-        ? String(data.error)
-        : `Request failed (${response.status})`;
-    throw new ApiError(message, response.status);
-  }
-
-  return data as T;
+  return response.data;
 }

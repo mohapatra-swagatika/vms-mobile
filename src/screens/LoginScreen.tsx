@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {strings} from '../constants';
+import {locale} from '../constants';
 import {Button, Card, Icon, TextField} from '../components';
 import {colors, radius, spacing} from '../theme';
 import {useAuth} from '../auth/AuthContext';
@@ -77,7 +77,7 @@ export function LoginScreen() {
       await signIn(email, password);
     } catch (e) {
       const message =
-        e instanceof Error ? e.message : strings.auth.loginFailed;
+        e instanceof Error ? e.message : locale.login.errors.loginFailed;
       setFormError(message);
       setSubmitting(false);
     }
@@ -96,11 +96,11 @@ export function LoginScreen() {
           fullWidth
           style={[styles.card, {maxWidth: maxCardWidth}]}
         >
-          <Text style={styles.title}>{strings.auth.title}</Text>
-          <Text style={styles.subtitle}>{strings.auth.subtitle}</Text>
+          <Text style={styles.title}>{locale.login.screen.title}</Text>
+          <Text style={styles.subtitle}>{locale.login.screen.subtitle}</Text>
 
           <TextField
-            label={strings.auth.emailLabel}
+            label={locale.login.form.email.label}
             value={email}
             onChangeText={onEmailChange}
             onBlur={() => {
@@ -111,16 +111,16 @@ export function LoginScreen() {
             autoCorrect={false}
             keyboardType="email-address"
             textContentType="username"
-            placeholder={strings.auth.emailPlaceholder}
+            placeholder={locale.login.form.email.placeholder}
             returnKeyType="next"
             editable={!submitting}
-            accessibilityLabel={strings.auth.emailLabel}
+            accessibilityLabel={locale.login.form.email.label}
             error={touched.email ? fieldErrors.email : undefined}
             containerStyle={styles.field}
           />
 
           <View style={styles.field}>
-            <Text style={styles.label}>{strings.auth.passwordLabel}</Text>
+            <Text style={styles.label}>{locale.login.form.password.label}</Text>
             <View style={styles.passwordField}>
               <TextInput
                 value={password}
@@ -134,7 +134,7 @@ export function LoginScreen() {
                 }}
                 secureTextEntry={!passwordVisible}
                 textContentType="password"
-                placeholder={strings.auth.passwordPlaceholder}
+                placeholder={locale.login.form.password.placeholder}
                 placeholderTextColor={colors.textTertiary}
                 returnKeyType="done"
                 style={[
@@ -146,7 +146,7 @@ export function LoginScreen() {
                 ]}
                 editable={!submitting}
                 onSubmitEditing={onSubmit}
-                accessibilityLabel={strings.auth.passwordLabel}
+                accessibilityLabel={locale.login.form.password.label}
               />
               <Pressable
                 onPress={() => setPasswordVisible(v => !v)}
@@ -154,8 +154,8 @@ export function LoginScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={
                   passwordVisible
-                    ? strings.auth.hidePasswordA11y
-                    : strings.auth.showPasswordA11y
+                    ? locale.login.accessibility.hidePassword
+                    : locale.login.accessibility.showPassword
                 }
                 hitSlop={10}
                 style={({pressed}) => [
@@ -179,12 +179,12 @@ export function LoginScreen() {
           {formError ? <Text style={styles.formError}>{formError}</Text> : null}
 
           <Button
-            label={strings.auth.signInCta}
+            label={locale.login.actions.signIn}
             onPress={onSubmit}
             disabled={!canSubmit}
             loading={submitting}
             style={styles.primaryButton}
-            accessibilityLabel={strings.auth.signInCta}
+            accessibilityLabel={locale.login.actions.signIn}
           />
         </Card>
       </View>

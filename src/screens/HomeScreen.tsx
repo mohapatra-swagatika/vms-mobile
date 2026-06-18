@@ -9,14 +9,14 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {ImageSlider} from '../components';
-import {strings} from '../constants';
+import {locale} from '../constants';
 import {getUserImages} from '../services/userImageService';
 import {colors, radius, spacing} from '../theme';
 import {UserImage} from '../types/user';
 import {useAuth} from '../auth/AuthContext';
 
 export function HomeScreen() {
-  const {state, signOut} = useAuth();
+  const {signOut} = useAuth();
   const insets = useSafeAreaInsets();
   const [images, setImages] = useState<UserImage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,24 +26,18 @@ export function HomeScreen() {
     let mounted = true;
 
     async function loadImages() {
-      if (!state.accessToken) {
-        setImages([]);
-        setLoading(false);
-        return;
-      }
-
       setLoading(true);
       setError(null);
 
       try {
-        const userImages = await getUserImages(state.accessToken);
+        const userImages = await getUserImages();
         if (mounted) {
           setImages(userImages);
         }
       } catch (e) {
         if (mounted) {
           const message =
-            e instanceof Error ? e.message : strings.home.loadImagesFailed;
+            e instanceof Error ? e.message : locale.home.gallery.loadFailed;
           setError(message);
           setImages([]);
         }
@@ -59,14 +53,14 @@ export function HomeScreen() {
     return () => {
       mounted = false;
     };
-  }, [state.accessToken]);
+  }, []);
 
   return (
     <View style={styles.root}>
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} size="large" />
-          <Text style={styles.loadingText}>{strings.home.loadingImages}</Text>
+          <Text style={styles.loadingText}>{locale.home.gallery.loading}</Text>
         </View>
       ) : error ? (
         <View style={styles.centered}>
@@ -75,9 +69,9 @@ export function HomeScreen() {
             onPress={signOut}
             style={({pressed}) => [styles.signOutButton, pressed && {opacity: 0.9}]}
             accessibilityRole="button"
-            accessibilityLabel={strings.home.signOut}
+            accessibilityLabel={locale.home.actions.signOut}
           >
-            <Text style={styles.signOutText}>{strings.home.signOut}</Text>
+            <Text style={styles.signOutText}>{locale.home.actions.signOut}</Text>
           </Pressable>
         </View>
       ) : (
@@ -91,9 +85,9 @@ export function HomeScreen() {
               pressed && {opacity: 0.9},
             ]}
             accessibilityRole="button"
-            accessibilityLabel={strings.home.signOut}
+            accessibilityLabel={locale.home.actions.signOut}
           >
-            <Text style={styles.signOutText}>{strings.home.signOut}</Text>
+            <Text style={styles.signOutText}>{locale.home.actions.signOut}</Text>
           </Pressable>
         </>
       )}
