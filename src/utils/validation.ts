@@ -57,10 +57,10 @@ export function validateVisitorForm(input: {
 }): VisitorFormErrors {
   const errors: VisitorFormErrors = {};
   if (!input.name.trim()) {
-    errors.name = strings.addVisitor.nameRequired;
+    errors.name = 'Visitor name is required.';
   }
   if (input.hostEmail.trim() && !EMAIL_PATTERN.test(input.hostEmail.trim())) {
-    errors.hostEmail = strings.addVisitor.invalidHostEmail;
+    errors.hostEmail = 'Please enter a valid host email.';
   }
   return errors;
 }

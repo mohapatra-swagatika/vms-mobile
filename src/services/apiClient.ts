@@ -98,3 +98,21 @@ export async function apiRequest<T>(
 
   return response.data;
 }
+
+export async function apiFormRequest<T>(
+  path: string,
+  formData: FormData,
+  accessToken?: string,
+): Promise<T> {
+  const response = await http.request<T>({
+    url: path,
+    method: 'POST',
+    data: formData,
+    headers: {
+      Accept: 'application/json',
+      ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : null),
+    },
+  });
+
+  return response.data;
+}

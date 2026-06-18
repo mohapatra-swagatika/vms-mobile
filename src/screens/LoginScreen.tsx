@@ -14,7 +14,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {locale} from '../constants';
 import {Button, Card, Icon, TextField} from '../components';
 import {colors, radius, spacing} from '../theme';
-import {useAuth} from '../auth/AuthContext';
+import {useAuth} from '../auth';
 import {
   LoginFormErrors,
   validateEmail,
@@ -92,10 +92,7 @@ export function LoginScreen() {
       behavior={Platform.select({ios: 'padding', android: undefined})}
     >
       <View style={styles.center}>
-        <Card
-          fullWidth
-          style={[styles.card, {maxWidth: maxCardWidth}]}
-        >
+        <Card style={[styles.card, {maxWidth: maxCardWidth}]}>
           <Text style={styles.title}>{locale.login.screen.title}</Text>
           <Text style={styles.subtitle}>{locale.login.screen.subtitle}</Text>
 

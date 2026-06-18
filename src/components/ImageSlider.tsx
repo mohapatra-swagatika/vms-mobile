@@ -13,7 +13,7 @@ import {
 
 import {config} from '../constants/config';
 import {locale} from '../constants';
-import {colors, spacing} from '../theme';
+import {colors, spacing, typography} from '../theme';
 import {UserImage} from '../types/user';
 
 type Props = {
@@ -89,6 +89,9 @@ export function ImageSlider({
   if (images.length === 0) {
     return (
       <View style={[styles.empty, {width: slideWidth, height: slideHeight}]}>
+        <View style={styles.emptyBadge}>
+          <Text style={styles.emptyBadgeText}>VMS</Text>
+        </View>
         <Text style={styles.emptyText}>{locale.home.gallery.empty}</Text>
       </View>
     );

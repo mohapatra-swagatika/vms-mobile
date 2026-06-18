@@ -33,6 +33,7 @@ export const locale = {
     errors: {
       loginFailed: 'Login failed.',
       loadConfigFailed: 'Could not load app configuration.',
+      noVisitorAccess: 'Your account does not have visitor access.',
     },
     boot: {
       restoringSession: 'Restoring session...',
@@ -57,6 +58,10 @@ export const locale = {
     },
     actions: {
       signOut: 'Sign out',
+      checkIn: 'CHECK-IN',
+    },
+    checkIn: {
+      success: 'Visitor checked in successfully.',
     },
   },
   errors: {
