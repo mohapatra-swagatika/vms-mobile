@@ -1,17 +1,22 @@
 import React from 'react';
 import {StyleSheet, View, ViewProps} from 'react-native';
 
-import {colors, radius} from '../theme';
+import {colors} from '../theme';
 
 type Props = ViewProps & {
-  fullWidth?: boolean;
+  variant?: 'default' | 'elevated' | 'glass';
 };
 
-export function Card({style, fullWidth, ...props}: Props) {
+export function Card({style, variant = 'default', ...props}: Props) {
   return (
     <View
       {...props}
-      style={[styles.base, fullWidth ? styles.fullWidth : null, style]}
+      style={[
+        styles.base,
+        variant === 'elevated' ? styles.elevated : null,
+        variant === 'glass' ? styles.glass : null,
+        style,
+      ]}
     />
   );
 }
@@ -19,13 +24,17 @@ export function Card({style, fullWidth, ...props}: Props) {
 const styles = StyleSheet.create({
   base: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 20,
     padding: 20,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  fullWidth: {
-    width: '100%',
+  elevated: {
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.borderStrong,
+  },
+  glass: {
+    backgroundColor: colors.surfaceGlass,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
 });
-

@@ -45,3 +45,22 @@ export function validateLoginForm(
 
   return errors;
 }
+
+export type VisitorFormErrors = {
+  name?: string;
+  hostEmail?: string;
+};
+
+export function validateVisitorForm(input: {
+  name: string;
+  hostEmail: string;
+}): VisitorFormErrors {
+  const errors: VisitorFormErrors = {};
+  if (!input.name.trim()) {
+    errors.name = strings.addVisitor.nameRequired;
+  }
+  if (input.hostEmail.trim() && !EMAIL_PATTERN.test(input.hostEmail.trim())) {
+    errors.hostEmail = strings.addVisitor.invalidHostEmail;
+  }
+  return errors;
+}

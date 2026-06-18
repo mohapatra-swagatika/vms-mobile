@@ -35,6 +35,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required to capture visitor photos during check-in.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is used when selecting a visitor photo.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

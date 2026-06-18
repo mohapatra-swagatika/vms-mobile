@@ -13,25 +13,29 @@ import {
 
 import {config} from '../constants/config';
 import {strings} from '../constants';
-import {colors, spacing} from '../theme';
+import {colors, spacing, typography} from '../theme';
 import {UserImage} from '../types/user';
 
 type Props = {
   images: UserImage[];
   autoPlayMs?: number;
+  height?: number;
+  overlayBottomInset?: number;
 };
 
 export function ImageSlider({
   images,
   autoPlayMs = config.imageSliderAutoPlayMs,
+  height: heightProp,
+  overlayBottomInset = spacing.lg,
 }: Props) {
-  const {width, height} = useWindowDimensions();
+  const {width, height: windowHeight} = useWindowDimensions();
   const listRef = useRef<FlatList<UserImage>>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const isUserScrolling = useRef(false);
 
   const slideWidth = width;
-  const slideHeight = height;
+  const slideHeight = heightProp ?? windowHeight;
 
   useEffect(() => {
     if (images.length <= 1) {
@@ -85,6 +89,9 @@ export function ImageSlider({
   if (images.length === 0) {
     return (
       <View style={[styles.empty, {width: slideWidth, height: slideHeight}]}>
+        <View style={styles.emptyBadge}>
+          <Text style={styles.emptyBadgeText}>VMS</Text>
+        </View>
         <Text style={styles.emptyText}>{strings.home.noImages}</Text>
       </View>
     );
@@ -116,8 +123,9 @@ export function ImageSlider({
               source={{uri: item.uri}}
               style={styles.image}
               resizeMode="cover"
-              accessibilityLabel={item.label ?? 'User image'}
+              accessibilityLabel={item.label ?? 'Gallery image'}
             />
+            <View style={styles.imageScrim} />
             {item.label ? (
               <View style={styles.captionBar}>
                 <Text style={styles.caption} numberOfLines={1}>
@@ -129,7 +137,7 @@ export function ImageSlider({
         )}
       />
 
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, {bottom: overlayBottomInset}]}>
         <View style={styles.dots}>
           {images.map((image, index) => (
             <View
@@ -154,14 +162,21 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  imageScrim: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: colors.heroScrim,
+  },
   captionBar: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 72,
-    paddingHorizontal: spacing.lg,
+    left: spacing.md,
+    right: spacing.md,
+    bottom: 64,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   caption: {
     color: colors.textPrimary,
@@ -171,35 +186,54 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: spacing.xl,
     alignItems: 'center',
   },
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.sm,
+    gap: 8,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.35)',
   },
   dotActive: {
-    backgroundColor: colors.primary,
-    width: 20,
+    backgroundColor: colors.primaryLight,
+    width: 22,
   },
   counter: {
     marginTop: spacing.sm,
     color: colors.textPrimary,
-    fontWeight: '600',
+    ...typography.caption,
+    textTransform: 'none',
+    letterSpacing: 0.3,
   },
   empty: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.backgroundElevated,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  emptyBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    backgroundColor: colors.primaryGlow,
+    borderWidth: 1,
+    borderColor: colors.borderFocus,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  emptyBadgeText: {
+    color: colors.primaryLight,
+    fontWeight: '800',
+    fontSize: 22,
+    letterSpacing: 2,
+  },
   emptyText: {
     color: colors.textSecondary,
+    fontSize: 15,
   },
 });

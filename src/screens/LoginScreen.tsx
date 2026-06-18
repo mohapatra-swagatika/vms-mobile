@@ -92,10 +92,7 @@ export function LoginScreen() {
       behavior={Platform.select({ios: 'padding', android: undefined})}
     >
       <View style={styles.center}>
-        <Card
-          fullWidth
-          style={[styles.card, {maxWidth: maxCardWidth}]}
-        >
+        <Card style={[styles.card, {maxWidth: maxCardWidth}]}>
           <Text style={styles.title}>{strings.auth.title}</Text>
           <Text style={styles.subtitle}>{strings.auth.subtitle}</Text>
 

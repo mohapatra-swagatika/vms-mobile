@@ -30,7 +30,57 @@ export async function apiRequest<T>(
   });
 
   const text = await response.text();
-  const data = text ? (JSON.parse(text) as T | ApiErrorBody) : ({} as T);
+  let data: T | ApiErrorBody = {} as T;
+
+  if (text) {
+    try {
+      data = JSON.parse(text) as T | ApiErrorBody;
+    } catch {
+      const message = text.trimStart().startsWith('<')
+        ? `Server returned HTML instead of JSON (${response.status}). Is the API running?`
+        : `Invalid JSON response (${response.status})`;
+      throw new ApiError(message, response.status);
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof data === 'object' && data && 'error' in data && data.error
+        ? String(data.error)
+        : `Request failed (${response.status})`;
+    throw new ApiError(message, response.status);
+  }
+
+  return data as T;
+}
+
+export async function apiFormRequest<T>(
+  path: string,
+  formData: FormData,
+  accessToken: string,
+): Promise<T> {
+  const response = await fetch(`${config.apiBaseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  });
+
+  const text = await response.text();
+  let data: T | ApiErrorBody = {} as T;
+
+  if (text) {
+    try {
+      data = JSON.parse(text) as T | ApiErrorBody;
+    } catch {
+      const message = text.trimStart().startsWith('<')
+        ? `Server returned HTML instead of JSON (${response.status}). Is the API running?`
+        : `Invalid JSON response (${response.status})`;
+      throw new ApiError(message, response.status);
+    }
+  }
 
   if (!response.ok) {
     const message =

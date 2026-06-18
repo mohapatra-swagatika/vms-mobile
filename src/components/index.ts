@@ -3,4 +3,14 @@ export {TextField} from './TextField';
 export {Card} from './Card';
 export {Icon} from './Icon';
 export {ImageSlider} from './ImageSlider';
-
+export {StatusBadge} from './StatusBadge';
+export {ScreenBackground} from './ScreenBackground';
+export {ScreenHeader} from './ScreenHeader';
+export {ActionTile} from './ActionTile';
+export {SectionHeader, AvatarInitials} from './SectionHeader';
+export {VisitorCard} from './VisitorCard';
+export {CheckInButton} from './CheckInButton';
+export {VisitorsFab} from './VisitorsFab';
+export {SlidePanel} from './SlidePanel';
+export {WizardDots} from './WizardDots';
+export {PhotoCapture} from './PhotoCapture';
