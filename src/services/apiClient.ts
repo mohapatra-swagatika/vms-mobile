@@ -1,4 +1,9 @@
-import {config} from '../constants/config';
+import {AxiosError, AxiosRequestConfig} from 'axios';
+
+import {clearSession, getAccessToken, refreshAccessToken} from '../auth/authSession';
+import {apiPaths} from '../constants/apiPaths';
+import {locale} from '../constants';
+import {http} from './httpClient';
 
 type ApiErrorBody = {
   error?: string;
@@ -13,82 +18,83 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest<T>(
-  path: string,
-  options: RequestInit & {accessToken?: string} = {},
-): Promise<T> {
-  const {accessToken, headers, ...rest} = options;
-
-  const response = await fetch(`${config.apiBaseUrl}${path}`, {
-    ...rest,
-    headers: {
-      Accept: 'application/json',
-      ...(rest.body ? {'Content-Type': 'application/json'} : null),
-      ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : null),
-      ...headers,
-    },
-  });
-
-  const text = await response.text();
-  let data: T | ApiErrorBody = {} as T;
-
-  if (text) {
-    try {
-      data = JSON.parse(text) as T | ApiErrorBody;
-    } catch {
-      const message = text.trimStart().startsWith('<')
-        ? `Server returned HTML instead of JSON (${response.status}). Is the API running?`
-        : `Invalid JSON response (${response.status})`;
-      throw new ApiError(message, response.status);
-    }
-  }
-
-  if (!response.ok) {
-    const message =
-      typeof data === 'object' && data && 'error' in data && data.error
-        ? String(data.error)
-        : `Request failed (${response.status})`;
-    throw new ApiError(message, response.status);
-  }
-
-  return data as T;
+function isAuthPath(url?: string): boolean {
+  return (
+    url?.includes(apiPaths.auth.login) === true ||
+    url?.includes(apiPaths.auth.refresh) === true
+  );
 }
 
-export async function apiFormRequest<T>(
-  path: string,
-  formData: FormData,
-  accessToken: string,
-): Promise<T> {
-  const response = await fetch(`${config.apiBaseUrl}${path}`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: formData,
-  });
+function toApiError(error: AxiosError<ApiErrorBody>): ApiError {
+  const status = error.response?.status ?? 0;
+  const message =
+    error.response?.data?.error ??
+    error.message ??
+    locale.errors.requestFailed(status || locale.errors.network);
+  return new ApiError(message, status);
+}
 
-  const text = await response.text();
-  let data: T | ApiErrorBody = {} as T;
-
-  if (text) {
-    try {
-      data = JSON.parse(text) as T | ApiErrorBody;
-    } catch {
-      const message = text.trimStart().startsWith('<')
-        ? `Server returned HTML instead of JSON (${response.status}). Is the API running?`
-        : `Invalid JSON response (${response.status})`;
-      throw new ApiError(message, response.status);
+/** Attach current access token to outgoing requests. */
+http.interceptors.request.use(requestConfig => {
+  if (!requestConfig.headers.Authorization) {
+    const token = getAccessToken();
+    if (token) {
+      requestConfig.headers.Authorization = `Bearer ${token}`;
     }
   }
+  return requestConfig;
+});
 
-  if (!response.ok) {
-    const message =
-      typeof data === 'object' && data && 'error' in data && data.error
-        ? String(data.error)
-        : `Request failed (${response.status})`;
-    throw new ApiError(message, response.status);
-  }
+/**
+ * On 401: call POST /auth/refresh with stored refresh token,
+ * save the new access token, then retry the original request.
+ */
+http.interceptors.response.use(
+  response => response,
+  async (error: AxiosError<ApiErrorBody>) => {
+    const original = error.config;
 
-  return data as T;
+    if (
+      !original ||
+      original._retry ||
+      original.skipAuthRefresh ||
+      error.response?.status !== 401 ||
+      isAuthPath(original.url)
+    ) {
+      throw toApiError(error);
+    }
+
+    try {
+      const nextToken = await refreshAccessToken();
+      original._retry = true;
+      original.headers.Authorization = `Bearer ${nextToken}`;
+      return http(original);
+    } catch {
+      await clearSession();
+      throw new ApiError(locale.errors.sessionExpired, 401);
+    }
+  },
+);
+
+export type ApiRequestOptions = AxiosRequestConfig & {
+  accessToken?: string;
+};
+
+export async function apiRequest<T>(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<T> {
+  const {accessToken, skipAuthRefresh, ...axiosConfig} = options;
+
+  const response = await http.request<T>({
+    url: path,
+    ...axiosConfig,
+    headers: {
+      ...axiosConfig.headers,
+      ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : null),
+    },
+    skipAuthRefresh,
+  });
+
+  return response.data;
 }

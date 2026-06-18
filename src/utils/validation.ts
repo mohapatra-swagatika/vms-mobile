@@ -1,4 +1,4 @@
-import {strings} from '../constants';
+import {locale} from '../constants';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -10,20 +10,20 @@ export type LoginFormErrors = {
 export function validateEmail(value: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) {
-    return strings.auth.emailRequired;
+    return locale.login.validation.emailRequired;
   }
   if (!EMAIL_PATTERN.test(trimmed)) {
-    return strings.auth.invalidEmail;
+    return locale.login.validation.invalidEmail;
   }
   return undefined;
 }
 
 export function validatePassword(value: string): string | undefined {
   if (!value) {
-    return strings.auth.passwordRequired;
+    return locale.login.validation.passwordRequired;
   }
   if (value.length < 6) {
-    return strings.auth.invalidPassword;
+    return locale.login.validation.invalidPassword;
   }
   return undefined;
 }

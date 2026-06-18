@@ -1,3 +1,4 @@
+import {apiPaths} from '../constants/apiPaths';
 import {apiRequest} from './apiClient';
 import {UserImage} from '../types/user';
 
@@ -36,14 +37,10 @@ function mapDbImage(raw: DbUserImage): UserImage | null {
  * (same images shown on the admin dashboard carousel).
  * Endpoint: GET /users/me/images (Bearer token required)
  */
-export async function getUserImages(accessToken: string): Promise<UserImage[]> {
-  const data = await apiRequest<UserImagesResponse>(
-    '/users/me/images',
-    {
-      method: 'GET',
-      accessToken,
-    },
-  );
+export async function getUserImages(): Promise<UserImage[]> {
+  const data = await apiRequest<UserImagesResponse>(apiPaths.users.meImages, {
+    method: 'GET',
+  });
 
   const rows = data.images ?? [];
   return rows.map(mapDbImage).filter((image): image is UserImage => image !== null);
