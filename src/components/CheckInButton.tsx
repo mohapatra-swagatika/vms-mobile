@@ -1,7 +1,7 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 
-import {colors, shadows, spacing} from '../theme';
+import {colors, shadows} from '../theme';
 
 type Props = {
   onPress: () => void;
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '900',
     letterSpacing: 2,
-    color: '#4a6278',
+    color: colors.textSecondary,
     zIndex: 1,
   },
 });

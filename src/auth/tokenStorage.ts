@@ -14,7 +14,10 @@ export async function loadStoredSession(): Promise<StoredSession | null> {
       return null;
     }
 
-    return parsed;
+    return {
+      ...parsed,
+      permissions: parsed.permissions ?? [],
+    };
   } catch {
     return null;
   }

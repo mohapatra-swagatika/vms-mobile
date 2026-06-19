@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {useAuth} from '../auth/AuthContext';
+import {usePermissions} from '../auth/AuthContext';
 import {
   Button,
   Icon,
@@ -19,7 +19,7 @@ import {
   ScreenHeader,
   VisitorCard,
 } from '../components';
-import {strings} from '../constants';
+import {locale} from '../constants';
 import {
   checkInVisitor,
   checkOutVisitor,
@@ -27,6 +27,10 @@ import {
 } from '../services/visitorService';
 import {colors, radius, shadows, spacing, typography} from '../theme';
 import {Visitor, VisitorStatus} from '../types/visitor';
+import {
+  canCheckInVisitor,
+  canCheckOutVisitor,
+} from '../utils/permissions';
 
 type Props = {
   onBack: () => void;
@@ -43,8 +47,10 @@ const FILTERS: {key: FilterKey; label: string}[] = [
 ];
 
 export function VisitorsListScreen({onBack}: Props) {
-  const {state, canCheckInVisitor, canCheckOutVisitor} = useAuth();
   const insets = useSafeAreaInsets();
+  const permissions = usePermissions();
+  const allowCheckIn = canCheckInVisitor(permissions);
+  const allowCheckOut = canCheckOutVisitor(permissions);
 
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,10 +62,6 @@ export function VisitorsListScreen({onBack}: Props) {
 
   const loadVisitors = useCallback(
     async (isRefresh = false) => {
-      if (!state.accessToken) {
-        return;
-      }
-
       if (isRefresh) {
         setRefreshing(true);
       } else {
@@ -68,11 +70,11 @@ export function VisitorsListScreen({onBack}: Props) {
       setError(null);
 
       try {
-        const result = await listVisitors(state.accessToken, {search});
+        const result = await listVisitors({search});
         setVisitors(result.visitors);
       } catch (e) {
         setError(
-          e instanceof Error ? e.message : strings.visitors.loadFailed,
+          e instanceof Error ? e.message : locale.visitors.loadFailed,
         );
         setVisitors([]);
       } finally {
@@ -80,7 +82,7 @@ export function VisitorsListScreen({onBack}: Props) {
         setRefreshing(false);
       }
     },
-    [search, state.accessToken],
+    [search],
   );
 
   useEffect(() => {
@@ -106,34 +108,28 @@ export function VisitorsListScreen({onBack}: Props) {
   }, [visitors]);
 
   const onCheckIn = async (visitorId: string) => {
-    if (!state.accessToken) {
-      return;
-    }
     setActionId(visitorId);
     try {
-      const updated = await checkInVisitor(state.accessToken, visitorId);
+      const updated = await checkInVisitor(visitorId);
       setVisitors(current =>
         current.map(item => (item.id === visitorId ? updated : item)),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : strings.visitors.loadFailed);
+      setError(e instanceof Error ? e.message : locale.visitors.loadFailed);
     } finally {
       setActionId(null);
     }
   };
 
   const onCheckOut = async (visitorId: string) => {
-    if (!state.accessToken) {
-      return;
-    }
     setActionId(visitorId);
     try {
-      const updated = await checkOutVisitor(state.accessToken, visitorId);
+      const updated = await checkOutVisitor(visitorId);
       setVisitors(current =>
         current.map(item => (item.id === visitorId ? updated : item)),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : strings.visitors.loadFailed);
+      setError(e instanceof Error ? e.message : locale.visitors.loadFailed);
     } finally {
       setActionId(null);
     }
@@ -142,11 +138,11 @@ export function VisitorsListScreen({onBack}: Props) {
   const renderItem = ({item}: {item: Visitor}) => {
     const busy = actionId === item.id;
     const showCheckIn =
-      canCheckInVisitor &&
+      allowCheckIn &&
       item.status !== 'checked_in' &&
       item.status !== 'checked_out';
     const showCheckOut =
-      canCheckOutVisitor &&
+      allowCheckOut &&
       (item.status === 'checked_in' || item.status === 'approved');
 
     return (
@@ -170,10 +166,10 @@ export function VisitorsListScreen({onBack}: Props) {
         ]}
       >
         <ScreenHeader
-          title={strings.visitors.title}
-          subtitle={strings.visitors.subtitle}
+          title={locale.visitors.title}
+          subtitle={locale.visitors.subtitle}
           onBack={onBack}
-          backLabel={strings.visitors.back}
+          backLabel={locale.visitors.back}
         />
 
         <View style={styles.statsRow}>
@@ -187,7 +183,7 @@ export function VisitorsListScreen({onBack}: Props) {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder={strings.visitors.searchPlaceholder}
+            placeholder={locale.visitors.searchPlaceholder}
             placeholderTextColor={colors.textTertiary}
             style={styles.search}
           />
@@ -241,7 +237,7 @@ export function VisitorsListScreen({onBack}: Props) {
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
                 <Text style={styles.emptyTitle}>No visitors found</Text>
-                <Text style={styles.empty}>{strings.visitors.empty}</Text>
+                <Text style={styles.empty}>{locale.visitors.empty}</Text>
               </View>
             }
           />

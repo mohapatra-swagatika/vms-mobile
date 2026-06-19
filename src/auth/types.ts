@@ -8,4 +8,5 @@ export type StoredUser = {
 export type StoredSession = {
   refreshToken: string;
   user: StoredUser;
+  permissions: string[];
 };

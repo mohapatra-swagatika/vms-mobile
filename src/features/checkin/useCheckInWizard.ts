@@ -1,6 +1,6 @@
 import {useCallback, useState} from 'react';
 
-import {strings} from '../../constants';
+import {locale} from '../../constants';
 import {validateEmail} from '../../utils/validation';
 import {
   CHECK_IN_STEPS,
@@ -37,7 +37,7 @@ export function useCheckInWizard() {
 
     if (step === 'contact') {
       if (!form.phone.trim() && !form.email.trim()) {
-        nextErrors.phone = strings.checkIn.contactRequired;
+        nextErrors.phone = locale.checkIn.contactRequired;
       }
       if (form.email.trim() && validateEmail(form.email)) {
         nextErrors.email = validateEmail(form.email)!;
@@ -45,23 +45,23 @@ export function useCheckInWizard() {
     }
 
     if (step === 'personal' && !form.name.trim()) {
-      nextErrors.name = strings.addVisitor.nameRequired;
+      nextErrors.name = locale.addVisitor.nameRequired;
     }
 
     if (step === 'host') {
       if (!form.purpose) {
-        nextErrors.purpose = strings.checkIn.purposeRequired;
+        nextErrors.purpose = locale.checkIn.purposeRequired;
       }
       if (!form.hostName.trim()) {
-        nextErrors.hostName = strings.checkIn.hostRequired;
+        nextErrors.hostName = locale.checkIn.hostRequired;
       }
       if (form.hostEmail.trim() && validateEmail(form.hostEmail)) {
-        nextErrors.hostEmail = strings.addVisitor.invalidHostEmail;
+        nextErrors.hostEmail = locale.addVisitor.invalidHostEmail;
       }
     }
 
     if (step === 'photo' && !form.photoUri) {
-      nextErrors.photo = strings.checkIn.photoRequired;
+      nextErrors.photo = locale.checkIn.photoRequired;
     }
 
     setErrors(nextErrors);

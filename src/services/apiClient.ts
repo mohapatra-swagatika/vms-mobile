@@ -112,6 +112,12 @@ export async function apiFormRequest<T>(
       Accept: 'application/json',
       ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : null),
     },
+    transformRequest: (data, headers) => {
+      if (headers) {
+        delete headers['Content-Type'];
+      }
+      return data;
+    },
   });
 
   return response.data;

@@ -1,5 +1,6 @@
 import {photoFileName, photoMimeType} from './photoService';
 import {CheckInFormData} from '../features/checkin/constants';
+import {apiPaths} from '../constants/apiPaths';
 import {
   CreateVisitorInput,
   Visitor,
@@ -8,7 +9,6 @@ import {
 import {apiFormRequest, apiRequest} from './apiClient';
 
 export async function listVisitors(
-  accessToken: string,
   params: {page?: number; search?: string} = {},
 ): Promise<VisitorListResponse> {
   const query = new URLSearchParams();
@@ -20,25 +20,20 @@ export async function listVisitors(
   }
 
   const suffix = query.toString() ? `?${query.toString()}` : '';
-  return apiRequest<VisitorListResponse>(`/visitors${suffix}`, {
-    accessToken,
+  return apiRequest<VisitorListResponse>(`${apiPaths.visitors.root}${suffix}`, {
+    method: 'GET',
   });
 }
 
-export async function createVisitor(
-  accessToken: string,
-  input: CreateVisitorInput,
-): Promise<Visitor> {
-  const result = await apiRequest<{visitor: Visitor}>('/visitors', {
+export async function createVisitor(input: CreateVisitorInput): Promise<Visitor> {
+  const result = await apiRequest<{visitor: Visitor}>(apiPaths.visitors.root, {
     method: 'POST',
-    accessToken,
-    body: JSON.stringify(input),
+    data: input,
   });
   return result.visitor;
 }
 
 export async function createVisitorFromCheckIn(
-  accessToken: string,
   form: CheckInFormData,
 ): Promise<Visitor> {
   const payload = {
@@ -68,39 +63,24 @@ export async function createVisitorFromCheckIn(
   }
 
   const result = await apiFormRequest<{visitor: Visitor}>(
-    '/visitors',
+    apiPaths.visitors.root,
     formData,
-    accessToken,
   );
   return result.visitor;
 }
 
-export async function checkInVisitor(
-  accessToken: string,
-  visitorId: string,
-): Promise<Visitor> {
+export async function checkInVisitor(visitorId: string): Promise<Visitor> {
   const result = await apiRequest<{visitor: Visitor}>(
-    `/visitors/${visitorId}/checkin`,
-    {
-      method: 'POST',
-      accessToken,
-      body: JSON.stringify({}),
-    },
+    apiPaths.visitors.checkIn(visitorId),
+    {method: 'POST', data: {}},
   );
   return result.visitor;
 }
 
-export async function checkOutVisitor(
-  accessToken: string,
-  visitorId: string,
-): Promise<Visitor> {
+export async function checkOutVisitor(visitorId: string): Promise<Visitor> {
   const result = await apiRequest<{visitor: Visitor}>(
-    `/visitors/${visitorId}/checkout`,
-    {
-      method: 'POST',
-      accessToken,
-      body: JSON.stringify({}),
-    },
+    apiPaths.visitors.checkOut(visitorId),
+    {method: 'POST', data: {}},
   );
   return result.visitor;
 }

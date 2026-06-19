@@ -9,9 +9,14 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {useAuth} from '../../auth/AuthContext';
-import {Button, Icon, PhotoCapture, TextField, WizardDots} from '../../components';
-import {strings} from '../../constants';
+import {
+  Button,
+  Icon,
+  PhotoCapture,
+  TextField,
+  WizardDots,
+} from '../../components';
+import {locale} from '../../constants';
 import {captureVisitorPhoto} from '../../services/photoService';
 import {createVisitorFromCheckIn} from '../../services/visitorService';
 import {colors, radius, spacing, typography} from '../../theme';
@@ -24,18 +29,17 @@ type Props = {
 };
 
 export function CheckInWizard({onClose, onSuccess}: Props) {
-  const {state} = useAuth();
   const insets = useSafeAreaInsets();
   const wizard = useCheckInWizard();
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const stepTitles = [
-    strings.checkIn.steps.contact,
-    strings.checkIn.steps.personal,
-    strings.checkIn.steps.host,
-    strings.checkIn.steps.photo,
-    strings.checkIn.steps.summary,
+    locale.checkIn.steps.contact,
+    locale.checkIn.steps.personal,
+    locale.checkIn.steps.host,
+    locale.checkIn.steps.photo,
+    locale.checkIn.steps.summary,
   ];
 
   const handleNext = async () => {
@@ -47,18 +51,15 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!state.accessToken) {
-      return;
-    }
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await createVisitorFromCheckIn(state.accessToken, wizard.form);
+      await createVisitorFromCheckIn(wizard.form);
       wizard.reset();
       onSuccess();
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : strings.checkIn.submitFailed,
+        error instanceof Error ? error.message : locale.checkIn.submitFailed,
       );
       setSubmitting(false);
     }
@@ -76,23 +77,23 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
       case 'contact':
         return (
           <>
-            <Text style={styles.stepTitle}>{strings.checkIn.contactTitle}</Text>
-            <Text style={styles.stepCopy}>{strings.checkIn.contactSubtitle}</Text>
+            <Text style={styles.stepTitle}>{locale.checkIn.contactTitle}</Text>
+            <Text style={styles.stepCopy}>{locale.checkIn.contactSubtitle}</Text>
             <TextField
               variant="onPrimary"
-              label={strings.addVisitor.phoneLabel}
+              label={locale.addVisitor.phoneLabel}
               value={wizard.form.phone}
               onChangeText={value => wizard.updateField('phone', value)}
-              placeholder={strings.addVisitor.phonePlaceholder}
+              placeholder={locale.addVisitor.phonePlaceholder}
               keyboardType="phone-pad"
               error={wizard.errors.phone}
             />
             <TextField
               variant="onPrimary"
-              label={strings.addVisitor.emailLabel}
+              label={locale.addVisitor.emailLabel}
               value={wizard.form.email}
               onChangeText={value => wizard.updateField('email', value)}
-              placeholder={strings.addVisitor.emailPlaceholder}
+              placeholder={locale.addVisitor.emailPlaceholder}
               keyboardType="email-address"
               autoCapitalize="none"
               error={wizard.errors.email}
@@ -103,14 +104,14 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
       case 'personal':
         return (
           <>
-            <Text style={styles.stepTitle}>{strings.checkIn.personalTitle}</Text>
-            <Text style={styles.stepCopy}>{strings.checkIn.personalSubtitle}</Text>
+            <Text style={styles.stepTitle}>{locale.checkIn.personalTitle}</Text>
+            <Text style={styles.stepCopy}>{locale.checkIn.personalSubtitle}</Text>
             <TextField
               variant="onPrimary"
-              label={strings.addVisitor.nameLabel}
+              label={locale.addVisitor.nameLabel}
               value={wizard.form.name}
               onChangeText={value => wizard.updateField('name', value)}
-              placeholder={strings.addVisitor.namePlaceholder}
+              placeholder={locale.addVisitor.namePlaceholder}
               error={wizard.errors.name}
             />
           </>
@@ -119,9 +120,9 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
       case 'host':
         return (
           <>
-            <Text style={styles.stepTitle}>{strings.checkIn.hostTitle}</Text>
-            <Text style={styles.stepCopy}>{strings.checkIn.hostSubtitle}</Text>
-            <Text style={styles.chipLabel}>{strings.addVisitor.purposeLabel}</Text>
+            <Text style={styles.stepTitle}>{locale.checkIn.hostTitle}</Text>
+            <Text style={styles.stepCopy}>{locale.checkIn.hostSubtitle}</Text>
+            <Text style={styles.chipLabel}>{locale.addVisitor.purposeLabel}</Text>
             <View style={styles.chips}>
               {PURPOSE_OPTIONS.map(option => (
                 <Pressable
@@ -148,35 +149,35 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
             ) : null}
             <TextField
               variant="onPrimary"
-              label={strings.addVisitor.hostNameLabel}
+              label={locale.addVisitor.hostNameLabel}
               value={wizard.form.hostName}
               onChangeText={value => wizard.updateField('hostName', value)}
-              placeholder={strings.addVisitor.hostNamePlaceholder}
+              placeholder={locale.addVisitor.hostNamePlaceholder}
               error={wizard.errors.hostName}
             />
             <TextField
               variant="onPrimary"
-              label={strings.addVisitor.hostEmailLabel}
+              label={locale.addVisitor.hostEmailLabel}
               value={wizard.form.hostEmail}
               onChangeText={value => wizard.updateField('hostEmail', value)}
-              placeholder={strings.addVisitor.hostEmailPlaceholder}
+              placeholder={locale.addVisitor.hostEmailPlaceholder}
               keyboardType="email-address"
               autoCapitalize="none"
               error={wizard.errors.hostEmail}
             />
             <TextField
               variant="onPrimary"
-              label={strings.addVisitor.organizationLabel}
+              label={locale.addVisitor.organizationLabel}
               value={wizard.form.organization}
               onChangeText={value => wizard.updateField('organization', value)}
-              placeholder={strings.addVisitor.organizationPlaceholder}
+              placeholder={locale.addVisitor.organizationPlaceholder}
             />
             <TextField
               variant="onPrimary"
-              label={strings.addVisitor.departmentLabel}
+              label={locale.addVisitor.departmentLabel}
               value={wizard.form.department}
               onChangeText={value => wizard.updateField('department', value)}
-              placeholder={strings.addVisitor.departmentPlaceholder}
+              placeholder={locale.addVisitor.departmentPlaceholder}
             />
           </>
         );
@@ -184,8 +185,8 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
       case 'photo':
         return (
           <>
-            <Text style={styles.stepTitle}>{strings.checkIn.photoTitle}</Text>
-            <Text style={styles.stepCopy}>{strings.checkIn.photoSubtitle}</Text>
+            <Text style={styles.stepTitle}>{locale.checkIn.photoTitle}</Text>
+            <Text style={styles.stepCopy}>{locale.checkIn.photoSubtitle}</Text>
             <PhotoCapture
               photoUri={wizard.form.photoUri}
               error={wizard.errors.photo}
@@ -198,8 +199,8 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
       case 'summary':
         return (
           <>
-            <Text style={styles.stepTitle}>{strings.checkIn.summaryTitle}</Text>
-            <Text style={styles.stepCopy}>{strings.checkIn.summarySubtitle}</Text>
+            <Text style={styles.stepTitle}>{locale.checkIn.summaryTitle}</Text>
+            <Text style={styles.stepCopy}>{locale.checkIn.summarySubtitle}</Text>
             {wizard.form.photoUri ? (
               <View style={styles.summaryPhotoWrap}>
                 <Image
@@ -238,7 +239,7 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
           <Icon name="arrowLeft" size={20} color={colors.textPrimary} />
         </Pressable>
         <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>{strings.checkIn.title}</Text>
+          <Text style={styles.headerTitle}>{locale.checkIn.title}</Text>
           <Text style={styles.headerStep}>{stepTitles[wizard.stepIndex]}</Text>
         </View>
       </View>
@@ -259,7 +260,7 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
 
       <View style={[styles.footer, {paddingBottom: insets.bottom + spacing.sm}]}>
         <Button
-          label={strings.checkIn.back}
+          label={locale.checkIn.back}
           onPress={wizard.isFirstStep ? onClose : wizard.goBack}
           variant="ghost"
           style={styles.footerBtn}
@@ -267,7 +268,7 @@ export function CheckInWizard({onClose, onSuccess}: Props) {
         />
         <Button
           label={
-            wizard.isLastStep ? strings.checkIn.complete : strings.checkIn.next
+            wizard.isLastStep ? locale.checkIn.complete : locale.checkIn.next
           }
           onPress={handleNext}
           variant="secondary"

@@ -9,7 +9,11 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {useAuth} from '../auth/AuthContext';
+import {
+  useAuth,
+  useCanCreateVisitor,
+  useCanReadVisitors,
+} from '../auth/AuthContext';
 import {
   CheckInButton,
   Icon,
@@ -25,12 +29,14 @@ import {AddVisitorScreen} from './AddVisitorScreen';
 import {VisitorsListScreen} from './VisitorsListScreen';
 
 export function HomeScreen() {
-  const {state, signOut, canCreateVisitor, canViewVisitorList} = useAuth();
+  const {state, signOut} = useAuth();
+  const canCreateVisitor = useCanCreateVisitor();
+  const canReadVisitors = useCanReadVisitors();
   const insets = useSafeAreaInsets();
   const {width, height} = useWindowDimensions();
 
   const [showList, setShowList] = useState(false);
-  const [checkInOpen, setCheckInOpen] = useState(false);
+  const [addVisitorOpen, setAddVisitorOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [images, setImages] = useState<UserImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(true);
@@ -39,7 +45,7 @@ export function HomeScreen() {
   const isLandscape = width > height;
   const panelWidthRatio = isLandscape ? 0.38 : 0.94;
   const checkInBottom = insets.bottom + (isLandscape ? 72 : 96);
-  const sliderOverlayBottom = checkInBottom + 88;
+  const sliderOverlayBottom = checkInBottom + (canCreateVisitor ? 88 : 0);
 
   useEffect(() => {
     let mounted = true;
@@ -88,7 +94,6 @@ export function HomeScreen() {
   }
 
   const displayName = state.userName ?? state.userEmail ?? 'User';
-  const showVisitorsFab = canViewVisitorList || canCreateVisitor;
 
   const reloadImages = () => {
     setImagesLoading(true);
@@ -153,7 +158,7 @@ export function HomeScreen() {
         </View>
       ) : null}
 
-      {showVisitorsFab ? (
+      {canReadVisitors ? (
         <View
           style={[styles.fab, {bottom: checkInBottom, left: spacing.lg}]}
           pointerEvents="box-none"
@@ -168,34 +173,32 @@ export function HomeScreen() {
             styles.checkInWrap,
             {
               bottom: checkInBottom,
-              opacity: checkInOpen ? 0 : 1,
+              opacity: addVisitorOpen ? 0 : 1,
             },
           ]}
-          pointerEvents={checkInOpen ? 'none' : 'auto'}
+          pointerEvents={addVisitorOpen ? 'none' : 'auto'}
         >
           <CheckInButton
             label={locale.home.actions.checkIn}
-            onPress={() => setCheckInOpen(true)}
+            onPress={() => setAddVisitorOpen(true)}
           />
         </View>
       ) : null}
 
-      {canCreateVisitor ? (
-        <SlidePanel
-          visible={checkInOpen}
-          onDismiss={() => setCheckInOpen(false)}
-          widthRatio={panelWidthRatio}
-        >
-          <AddVisitorScreen
-            variant="panel"
-            onBack={() => setCheckInOpen(false)}
-            onSuccess={() => {
-              setCheckInOpen(false);
-              setToast(locale.home.checkIn.success);
-            }}
-          />
-        </SlidePanel>
-      ) : null}
+      <SlidePanel
+        visible={addVisitorOpen}
+        onDismiss={() => setAddVisitorOpen(false)}
+        widthRatio={panelWidthRatio}
+      >
+        <AddVisitorScreen
+          variant="panel"
+          onBack={() => setAddVisitorOpen(false)}
+          onSuccess={() => {
+            setAddVisitorOpen(false);
+            setToast(locale.home.addVisitor.success);
+          }}
+        />
+      </SlidePanel>
     </View>
   );
 }

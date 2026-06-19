@@ -8,6 +8,7 @@ type SessionListener = () => void;
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
 let user: StoredUser | null = null;
+let permissions: string[] = [];
 let refreshPromise: Promise<string> | null = null;
 const listeners = new Set<SessionListener>();
 
@@ -32,6 +33,10 @@ export function getSessionUser(): StoredUser | null {
   return user;
 }
 
+export function getSessionPermissions(): string[] {
+  return permissions;
+}
+
 export function hasPersistedSession(): boolean {
   return Boolean(refreshToken);
 }
@@ -44,6 +49,7 @@ export async function hydrateSessionFromStorage(): Promise<StoredSession | null>
 
   refreshToken = stored.refreshToken;
   user = stored.user;
+  permissions = stored.permissions ?? [];
   return stored;
 }
 
@@ -51,14 +57,17 @@ export async function establishSession(input: {
   accessToken: string;
   refreshToken: string;
   user: StoredUser;
+  permissions: string[];
 }): Promise<void> {
   accessToken = input.accessToken;
   refreshToken = input.refreshToken;
   user = input.user;
+  permissions = input.permissions;
 
   await saveStoredSession({
     refreshToken: input.refreshToken,
     user: input.user,
+    permissions: input.permissions,
   });
   notify();
 }
@@ -82,7 +91,7 @@ export async function rotateSessionTokens(input: {
   }
 
   if (refreshToken && user) {
-    await saveStoredSession({refreshToken, user});
+    await saveStoredSession({refreshToken, user, permissions});
   }
   notify();
 }
@@ -91,6 +100,7 @@ export async function clearSession(): Promise<void> {
   accessToken = null;
   refreshToken = null;
   user = null;
+  permissions = [];
   refreshPromise = null;
   await clearStoredSession();
   notify();

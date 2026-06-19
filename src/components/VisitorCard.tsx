@@ -1,7 +1,7 @@
 import React from 'react';
 import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
 
-import {strings} from '../constants';
+import {locale} from '../constants';
 import {resolveMediaUrl} from '../utils/media';
 import {colors, radius, shadows, spacing, typography} from '../theme';
 import {Visitor} from '../types/visitor';
@@ -73,7 +73,7 @@ export function VisitorCard({
         <View style={styles.actions}>
           {showCheckIn ? (
             <Button
-              label={strings.visitors.checkIn}
+              label={locale.visitors.checkIn}
               onPress={onCheckIn ?? (() => {})}
               loading={busy}
               disabled={busy}
@@ -83,7 +83,7 @@ export function VisitorCard({
           ) : null}
           {showCheckOut ? (
             <Button
-              label={strings.visitors.checkOut}
+              label={locale.visitors.checkOut}
               onPress={onCheckOut ?? (() => {})}
               loading={busy}
               disabled={busy}

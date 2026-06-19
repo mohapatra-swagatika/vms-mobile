@@ -9,10 +9,11 @@ export type RefreshTokenResponse = {
   user: StoredUser;
 };
 
-type LoginResponse = {
+export type LoginResponse = {
   access_token: string;
   refresh_token: string;
   user: StoredUser;
+  permissions: string[];
 };
 
 /**

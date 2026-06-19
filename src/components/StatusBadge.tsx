@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
-import {strings} from '../constants';
+import {locale} from '../constants';
 import {colors, radius, spacing} from '../theme';
 import {VisitorStatus} from '../types/visitor';
 
@@ -23,7 +23,7 @@ export function StatusBadge({status}: Props) {
   return (
     <View style={[styles.badge, {backgroundColor: `${color}20`, borderColor: `${color}44`}]}>
       <View style={[styles.dot, {backgroundColor: color}]} />
-      <Text style={[styles.text, {color}]}>{strings.visitors.status[status]}</Text>
+      <Text style={[styles.text, {color}]}>{locale.visitors.status[status]}</Text>
     </View>
   );
 }

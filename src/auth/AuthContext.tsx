@@ -12,25 +12,22 @@ import {
   establishSession,
   getAccessToken,
   getRefreshToken,
+  getSessionPermissions,
   getSessionUser,
   hydrateSessionFromStorage,
   refreshAccessToken,
   subscribeSession,
 } from './authSession';
-import {apiPaths} from '../constants/apiPaths';
 import {locale} from '../constants';
 import {loginWithEmail} from '../services/authService';
-import {apiRequest} from '../services/apiClient';
 import {getUserConfig} from '../services/userConfigService';
 import {UserConfig} from '../types/config';
 import {
-  canCheckInVisitor,
-  canCheckOutVisitor,
   canCreateVisitor,
   canReadVisitors,
-  canViewVisitorList,
   hasVisitorPortalAccess,
 } from '../utils/permissions';
+
 import {validateEmail, validatePassword} from '../utils/validation';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -47,11 +44,6 @@ type AuthState = {
 
 type AuthContextValue = {
   state: AuthState;
-  canCreateVisitor: boolean;
-  canReadVisitors: boolean;
-  canViewVisitorList: boolean;
-  canCheckInVisitor: boolean;
-  canCheckOutVisitor: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -68,18 +60,7 @@ const UNAUTHENTICATED_STATE: AuthState = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function fetchPermissions(): Promise<string[]> {
-  const data = await apiRequest<{permissions?: string[]}>(
-    apiPaths.auth.permissions,
-    {method: 'GET'},
-  );
-  return data.permissions ?? [];
-}
-
-function buildAuthenticatedState(
-  userConfig: UserConfig,
-  permissions: string[],
-): AuthState {
+function buildAuthenticatedState(userConfig: UserConfig): AuthState {
   const user = getSessionUser();
   return {
     status: 'authenticated',
@@ -88,7 +69,7 @@ function buildAuthenticatedState(
     userName: user?.name ?? null,
     accessToken: getAccessToken(),
     userConfig,
-    permissions,
+    permissions: getSessionPermissions(),
   };
 }
 
@@ -109,11 +90,14 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       }
 
       await refreshAccessToken();
-      const [userConfig, permissions] = await Promise.all([
-        getUserConfig(),
-        fetchPermissions(),
-      ]);
-      setState(buildAuthenticatedState(userConfig, permissions));
+      const storedPermissions = getSessionPermissions();
+      if (!hasVisitorPortalAccess(storedPermissions)) {
+        await clearSession();
+        setState(UNAUTHENTICATED_STATE);
+        return;
+      }
+      const userConfig = await getUserConfig();
+      setState(buildAuthenticatedState(userConfig));
     } catch {
       await clearSession();
       setState(UNAUTHENTICATED_STATE);
@@ -142,6 +126,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
           userEmail: sessionUser?.email ?? prev.userEmail,
           userId: sessionUser?.id ?? prev.userId,
           userName: sessionUser?.name ?? prev.userName,
+          permissions: getSessionPermissions(),
         };
       });
     });
@@ -158,31 +143,28 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     }
 
     const result = await loginWithEmail(email, password);
+    const userPermissions = result.permissions ?? [];
+
+    if (!hasVisitorPortalAccess(userPermissions)) {
+      throw new Error(locale.login.errors.noVisitorAccess);
+    }
 
     await establishSession({
       accessToken: result.access_token,
       refreshToken: result.refresh_token,
       user: result.user,
+      permissions: userPermissions,
     });
 
     let userConfig: UserConfig;
-    let permissions: string[];
     try {
-      [userConfig, permissions] = await Promise.all([
-        getUserConfig(),
-        fetchPermissions(),
-      ]);
+      userConfig = await getUserConfig();
     } catch {
       await clearSession();
       throw new Error(locale.login.errors.loadConfigFailed);
     }
 
-    if (!hasVisitorPortalAccess(permissions)) {
-      await clearSession();
-      throw new Error(locale.login.errors.noVisitorAccess);
-    }
-
-    setState(buildAuthenticatedState(userConfig, permissions));
+    setState(buildAuthenticatedState(userConfig));
   }, []);
 
   const signOut = useCallback(async () => {
@@ -193,11 +175,6 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
-      canCreateVisitor: canCreateVisitor(state.permissions),
-      canReadVisitors: canReadVisitors(state.permissions),
-      canViewVisitorList: canViewVisitorList(state.permissions),
-      canCheckInVisitor: canCheckInVisitor(state.permissions),
-      canCheckOutVisitor: canCheckOutVisitor(state.permissions),
       signIn,
       signOut,
     }),
@@ -221,4 +198,16 @@ export function useIsAuthenticated(): boolean {
 
 export function useAuthLoading(): boolean {
   return useAuth().state.status === 'loading';
+}
+
+export function usePermissions(): string[] {
+  return useAuth().state.permissions;
+}
+
+export function useCanCreateVisitor(): boolean {
+  return canCreateVisitor(usePermissions());
+}
+
+export function useCanReadVisitors(): boolean {
+  return canReadVisitors(usePermissions());
 }
