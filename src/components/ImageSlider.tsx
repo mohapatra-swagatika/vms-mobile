@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   FlatList,
   Image,
@@ -8,13 +8,29 @@ import {
   Text,
   useWindowDimensions,
   View,
-  ViewToken,
 } from 'react-native';
 
 import {config} from '../constants/config';
 import {locale} from '../constants';
 import {colors, spacing, typography} from '../theme';
 import {UserImage} from '../types/user';
+
+type LoopSlide = UserImage & {loopKey: string};
+
+const LOOP_COPIES = 3;
+
+function buildLoopSlides(images: UserImage[]): LoopSlide[] {
+  if (images.length <= 1) {
+    return images.map(image => ({...image, loopKey: image.id}));
+  }
+
+  return Array.from({length: LOOP_COPIES}, (_, copy) =>
+    images.map((image, index) => ({
+      ...image,
+      loopKey: `${image.id}-${copy}-${index}`,
+    })),
+  ).flat();
+}
 
 type Props = {
   images: UserImage[];
@@ -30,15 +46,75 @@ export function ImageSlider({
   overlayBottomInset = spacing.lg,
 }: Props) {
   const {width, height: windowHeight} = useWindowDimensions();
-  const listRef = useRef<FlatList<UserImage>>(null);
+  const listRef = useRef<FlatList<LoopSlide>>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const isUserScrolling = useRef(false);
+  const virtualIndexRef = useRef(0);
 
   const slideWidth = width;
   const slideHeight = heightProp ?? windowHeight;
+  const loopSlides = useMemo(() => buildLoopSlides(images), [images]);
+  const isLooping = images.length > 1;
+  const middleStart = images.length;
+
+  const normalizeVirtualIndex = useCallback(
+    (index: number): number => {
+      if (!isLooping) {
+        return index;
+      }
+
+      if (index >= images.length * 2) {
+        return index - images.length;
+      }
+
+      if (index < images.length) {
+        return index + images.length;
+      }
+
+      return index;
+    },
+    [images.length, isLooping],
+  );
+
+  const scrollToVirtualIndex = useCallback(
+    (index: number, animated: boolean) => {
+      listRef.current?.scrollToOffset({
+        offset: index * slideWidth,
+        animated,
+      });
+    },
+    [slideWidth],
+  );
+
+  const syncLoopPosition = useCallback(
+    (index: number) => {
+      const normalized = normalizeVirtualIndex(index);
+      if (normalized !== index) {
+        scrollToVirtualIndex(normalized, false);
+      }
+      virtualIndexRef.current = normalized;
+      setActiveIndex(normalized % images.length);
+      return normalized;
+    },
+    [images.length, normalizeVirtualIndex, scrollToVirtualIndex],
+  );
 
   useEffect(() => {
-    if (images.length <= 1) {
+    if (!isLooping) {
+      virtualIndexRef.current = 0;
+      setActiveIndex(0);
+      return;
+    }
+
+    virtualIndexRef.current = middleStart;
+    setActiveIndex(0);
+    requestAnimationFrame(() => {
+      scrollToVirtualIndex(middleStart, false);
+    });
+  }, [isLooping, middleStart, scrollToVirtualIndex, loopSlides]);
+
+  useEffect(() => {
+    if (!isLooping) {
       return;
     }
 
@@ -47,39 +123,22 @@ export function ImageSlider({
         return;
       }
 
-      setActiveIndex(current => {
-        const nextIndex = (current + 1) % images.length;
-        listRef.current?.scrollToOffset({
-          offset: nextIndex * slideWidth,
-          animated: true,
-        });
-        return nextIndex;
-      });
+      const nextIndex = virtualIndexRef.current + 1;
+      virtualIndexRef.current = nextIndex;
+      scrollToVirtualIndex(nextIndex, true);
+      setActiveIndex(nextIndex % images.length);
     }, autoPlayMs);
 
     return () => clearInterval(timer);
-  }, [autoPlayMs, images.length, slideWidth]);
+  }, [autoPlayMs, images.length, isLooping, scrollToVirtualIndex]);
 
-  const onViewableItemsChanged = useRef(
-    ({viewableItems}: {viewableItems: ViewToken[]}) => {
-      const index = viewableItems[0]?.index;
-      if (typeof index === 'number') {
-        setActiveIndex(index);
-      }
-    },
-  ).current;
-
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 60,
-  }).current;
-
-  const onMomentumScrollEnd = useCallback(
+  const onScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       isUserScrolling.current = false;
       const index = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
-      setActiveIndex(index);
+      syncLoopPosition(index);
     },
-    [slideWidth],
+    [slideWidth, syncLoopPosition],
   );
 
   const onScrollBeginDrag = useCallback(() => {
@@ -101,17 +160,16 @@ export function ImageSlider({
     <View style={[styles.wrapper, {width: slideWidth, height: slideHeight}]}>
       <FlatList
         ref={listRef}
-        data={images}
-        keyExtractor={item => item.id}
+        data={loopSlides}
+        keyExtractor={item => item.loopKey}
         horizontal
         pagingEnabled
         bounces={false}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         onScrollBeginDrag={onScrollBeginDrag}
-        onMomentumScrollEnd={onMomentumScrollEnd}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        onScrollEndDrag={onScrollEnd}
+        onMomentumScrollEnd={onScrollEnd}
         getItemLayout={(_, index) => ({
           length: slideWidth,
           offset: slideWidth * index,
